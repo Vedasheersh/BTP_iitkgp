@@ -234,6 +234,10 @@ class Residue(object):
 		atom_names = ['N','CA','C','O']
 		if arg in atom_names:
 			return self.atoms[arg]
+		elif arg=='name':
+			return self.res_name
+		elif arg=='serial':
+			return self.res_num
 
 class Atom(object):
 	"""
@@ -276,6 +280,12 @@ class Atom(object):
 	def __repr__(self):
 		return 'Atom object: {} {} in Residue {} {}'.format(self.serial,self.name,self.parent.res_num,self.parent.res_name)
 
+	def __getattr__(self,arg):
+		if arg=='name':
+			return self.name
+		if arg=='serial':
+			return self.serial
+
 class Vector(object):
 	"""
 	Description:
@@ -306,11 +316,11 @@ class Vector(object):
 			z = self.z*other
 		return Vector(x,y,z)
 
-	def __truediv__(self, other):
+	def __div__(self, other):
 		if isinstance(other,int) or isinstance(other,float):
-			x = self.x*other
-			y = self.y*other
-			z = self.z*other
+			x = self.x/other
+			y = self.y/other
+			z = self.z/other
 		return Vector(x,y,z)
 
 	def alter(self,other):
