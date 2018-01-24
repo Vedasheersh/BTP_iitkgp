@@ -9,21 +9,27 @@ def main(ens_pdb_names, res_range_HOX, res_range_flex):
 
 	distances_matrix = []
 
-	# Create parser object
+	## Create parser object
 	parser = pdb.PDBParser()
 
+	## Loop over all pdb names present in the ensemble list
 	for pdb_name in ens_pdb_names:
+		## Create a pdb object (using parser) for the current pdb_name
 		pdb_obj = parser.parse(pdb_name)
 
+		## If there are multiple models in the pdb file, there is ambiguity as which model to choose!
 		if len(pdb_obj.models) > 1:
 			print pdb_obj.models
 			model_num = raw_input('PDB file {} has multiple models in it. Which to consider?\
 				Enter model number:'.format(pdb_name))
 		else:
+			## If there is only single model in the pdb, it is numbered 0 by default
 			model_num = 0
 
+		## The model object
 		_model = pdb_obj.model(model_num)
 
+		## Again, if there are multiple chains in the model choosen, there is ambiguity as which chain! 
 		if len(_model.chains) > 1:
 			print _model.chains
 			chain_name = raw_input('PDB file {} has multiple chains in it. Which to consider?\
@@ -31,6 +37,7 @@ def main(ens_pdb_names, res_range_HOX, res_range_flex):
 			_chain = _model.chain(chain_name)
 
 		else:
+			## If there is only single chain, take it.
 			_chain = _model.chains.values()[0]
 		
 		## Place holder for N, CA, C and O position vectors of all residues of HOX domain
@@ -38,6 +45,7 @@ def main(ens_pdb_names, res_range_HOX, res_range_flex):
 		## Place holder for CA position vectors of all residues of flexible region
 		flex_CA_vectors = []
 
+		## Loop through all the residues of chosen chain
 		for residue in _chain:
 			if res_range_HOX[0]<=residue.serial<=res_range_HOX[1]:
 				HOX_heavy_vectors.extend([residue.N.position,residue.CA.position,residue.C.position,residue.O.position])
@@ -53,18 +61,37 @@ def main(ens_pdb_names, res_range_HOX, res_range_flex):
 		for vec in HOX_heavy_vectors[0:]:
 			center_of_mass+=vec-ref_vec
 		center_of_mass/=len(HOX_heavy_vectors)
-		print center_of_mass, 'is the position vector of center of mass.'
+		# print center_of_mass, 'is the position vector of center of mass.'
 
 		matrix = [vec.distance(center_of_mass) for vec in flex_CA_vectors]
 
 		distances_matrix.append(matrix)
 
-	avg_distances_matrix = pdb.np.array([0.0]*len(distances_matrix[0]))
-	for matrix in distances_matrix:
-		avg_distances_matrix+=pdb.np.array(matrix)
-	avg_distances_matrix/=len(distances_matrix)
+	return distances_matrix
 
-	return distances_matrix, list(avg_distances_matrix)
+def plot_results(distances_matrix):
+	'''
+	Plot the distances from calculated matrix.
+	'''
+	import matplotlib.pyplot as plt
+	matrix_by_res = []
+	for res_num in range(len(distances_matrix[0])):
+		temp = []	
+		for conf_num in range(len(distances_matrix)):
+			temp.append(distances_matrix[conf_num][res_num])
+		matrix_by_res.append(pdb.np.array(temp))
+
+	avg_matrix = []
+	std_matrix = []
+	for matrix in matrix_by_res:
+		avg_matrix.append(pdb.np.average(matrix))
+		std_matrix.append(pdb.np.std(matrix))
+
+	plt.figure()
+	plt.errorbar(range(len(avg_matrix)),avg_matrix,yerr=std_matrix,fmt='o')
+	plt.plot(avg_matrix,'c',label='average distance')
+	plt.plot(std_matrix,'--',label='standard deviation')
+	plt.show()
 
 if __name__ == '__main__':
 
@@ -95,21 +122,17 @@ if __name__ == '__main__':
 	ens_pdb_names = [l.strip() for l in list_lines if l.strip().endswith('.pdb')]
 	print 'Found {} pdbs in list file'.format(len(ens_pdb_names))
 	
-	distances_matrix, avg_distances_matrix = main(ens_pdb_names, res_range_HOX, res_range_flex)
+	distances_matrix = main(ens_pdb_names, res_range_HOX, res_range_flex)
 
 	if args.plot:
 		try:
 			import matplotlib.pyplot as plt
-			plt.plot(avg_distances_matrix)
-			plt.show()
+			plot_results(distances_matrix)
 		except ImportError:
 			print 'Couldn"t import matplotlib for plotting!'
-			import json
-			f = open('out_distances.json','w')
-			f.write(json.dumps(avg_distances_matrix))
-			f.close()
-			f = open('raw_distances.json','w')
-			f.write(json.dumps(distances_matrix))
-			f.close()
-			print 'Dumped the average distances matrix to out_distances.json!'
-			print 'Dumped the raw distances matrix to raw_distances.json'
+
+		f = open('raw_distances.json','w')
+		f.write(json.dumps(distances_matrix))
+		f.close()
+
+		print 'Dumped the raw distances matrix to raw_distances.json'
