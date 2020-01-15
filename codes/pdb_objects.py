@@ -74,6 +74,15 @@ class Model(object):
 		self.chains[chain_name] = Chain(self, chain_name)
 		return self.chains[chain_name]
 
+	def get_dihedrals(self,chain_names=[]):
+		dihedrals = {}
+		if not chain_names:
+			chain_names = self.chains.keys()
+		for chain_name in chain_names:
+			chain = self.chain(chain_name)
+			dihedrals[chain_name] = chain.get_dihedrals()
+		return dihedrals
+
 	def chain(self,chain_name):
 		'''
 		Returns Chain object.
@@ -143,6 +152,15 @@ class Chain(object):
 			return self.residues[res_num]
 		except KeyError as e:
 			return None
+
+	def get_dihedrals(self):
+		dihedrals = []
+		residues = self.residues.values()
+		
+		for res in residues:
+			dihedrals.append([(res.res_num,res.res_name),res.get_dihedral()])
+
+		return dihedrals
 
 	def __getattr__(self,arg):
 		models_now = self.residues.keys()
@@ -218,7 +236,7 @@ class Residue(object):
 			N3vec = next_res.atoms['N'].position
 			psi = N2vec.dihedral(CA2vec,C2vec,N3vec)
 
-		print 'Phi:{}, Psi:{}'.format(phi,psi)
+		# print 'Phi:{}, Psi:{}'.format(phi,psi)
 		return phi,psi
 
 	def __iter__(self):
@@ -346,7 +364,7 @@ class Vector(object):
 		norm2 = bc.cross(cd)
 		angle = norm1.angle(norm2)
 		foo=bc.dot(norm1.cross(norm2))
-		print foo
+		# print foo
 		if foo>0:
 			return angle
 		elif foo<0:
