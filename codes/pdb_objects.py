@@ -115,12 +115,12 @@ class Model(object):
 	def __str__(self):
 		return 'Model object: I have {} chains as children'.format(len(self.children))
 	
-	def translate(self, [xt, yt, zt], chains='ALL'):
+	def translate(self, xt, yt, zt, chains='ALL'):
         	if chains=='ALL':
             		chains = self.chains.keys()
         	for c in chains:
             		chain = self.chains[c]
-            		chain.translate([xt,yt,zt])
+            		chain.translate(xt,yt,zt)
 
 
 class Chain(object):
@@ -271,12 +271,12 @@ class Residue(object):
 			return self.res_name
 		elif arg=='serial':
 			return self.res_num
-	def translate(self, [xt, yt, zt], atoms='ALL'):
+	def translate(self, xt, yt, zt, atoms='ALL'):
 		if atoms=='ALL':
 			atoms = self.atoms.keys()
 		for a in atoms:
 			atom = self.get_atom(str(a))
-			atom.translate([xt,yt,zt])
+			atom.translate(xt,yt,zt)
 
 class Atom(object):
 	"""
@@ -325,7 +325,7 @@ class Atom(object):
 		if arg=='serial':
 			return self.serial
 	
-	def translate( self, [xt, yt, zt]):
+	def translate( self, xt, yt, zt):
 		tran_pos = Vector(xt,yt,zt)
 		cur_pos = self.position
 		self.position = cur_pos.translate(tran_pos)
