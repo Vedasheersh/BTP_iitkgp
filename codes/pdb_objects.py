@@ -194,12 +194,12 @@ class Chain(object):
 	def __repr__(self):
 		return 'Chain object: Chain {}'.format(self.chain_name)
 	
-	def translate(self, [xt, yt, zt], residues='ALL'):
+	def translate(self, xt, yt, zt, residues='ALL'):
 		if residues=='ALL':
 			residues = self.residues.keys()
 		for r in residues:
 			residue = self.residues[r]
-			residue.translate([xt,yt,zt])
+			residue.translate(xt,yt,zt)
 		
 class Residue(object):
 	"""
